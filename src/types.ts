@@ -47,6 +47,7 @@ export type WeatherSummary = {
 
 export type NotionScheduleItem = {
   title: string;
+  url: string | null;
   start: string;
   end: string | null;
 };

@@ -49,10 +49,10 @@ describe("formatSchedulesSection", () => {
 
   it("renders upcoming items", () => {
     const section = formatSchedulesSection([
-      { title: "회의", start: "2026-03-23 09:00 KST", end: null }
+      { title: "회의", url: "https://notion.so/example", start: "2026-03-23 09:00 KST", end: null }
     ]);
 
-    expect(section).toContain("회의");
+    expect(section).toContain("[회의](https://notion.so/example)");
     expect(section).toContain("3/23");
   });
 });

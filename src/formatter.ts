@@ -46,7 +46,10 @@ export function formatSchedulesSection(items: NotionScheduleItem[]): string {
     return "## Notion 일정\n- 오늘 이후 일정이 없습니다.";
   }
 
-  const lines = items.map((item) => `- ${item.title}: ${formatMonthDay(item.start)}`);
+  const lines = items.map((item) => {
+    const title = item.url ? `[${item.title}](${item.url})` : item.title;
+    return `- ${title}: ${formatMonthDay(item.start)}`;
+  });
 
   return ["## Notion 일정", ...lines].join("\n");
 }

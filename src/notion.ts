@@ -3,6 +3,7 @@ import type { NotionScheduleItem } from "./types";
 
 type NotionPage = {
   properties?: Record<string, NotionProperty>;
+  url?: string;
 };
 
 type NotionDateProperty = {
@@ -111,6 +112,7 @@ export async function fetchUpcomingSchedules(
 
     schedules.push({
       title: extractTitle(properties),
+      url: page.url ?? null,
       start: dateField.date.start ? formatIsoLikeForKst(dateField.date.start) : "",
       end: dateField.date.end ? formatIsoLikeForKst(dateField.date.end) : null
     });
