@@ -75,6 +75,13 @@ docker compose up --build
 2. D-day 계산
 3. Open-Meteo에서 오늘 날씨 조회
 4. Notion 데이터베이스에서 오늘 이후 일정 조회
-5. Discord webhook으로 단일 텍스트 메시지 전송
+5. ZenQuotes에서 오늘의 명언 조회
+6. Discord webhook으로 단일 텍스트 메시지 전송
+
+사용하는 외부 API:
+
+- Open-Meteo
+- Notion API
+- ZenQuotes `https://zenquotes.io/api/today`
 
 외부 API 일부가 실패하면 해당 섹션만 오류 문구로 대체하고 나머지는 전송합니다. `config.yml` 파싱/검증 실패와 Discord 전송 실패는 프로세스 전체 실패로 처리합니다.

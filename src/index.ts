@@ -1,8 +1,9 @@
 import { loadConfig } from "./config";
 import { buildDdayItems } from "./dday";
 import { sendDiscordWebhook } from "./discord";
-import { buildBriefingMessage, formatDdaySection, formatErrorSection, formatSchedulesSection, formatWeatherSection } from "./formatter";
+import { buildBriefingMessage, formatDdaySection, formatErrorSection, formatQuoteSection, formatSchedulesSection, formatWeatherSection } from "./formatter";
 import { fetchUpcomingSchedules } from "./notion";
+import { fetchQuoteOfTheDay } from "./quote";
 import { toKstDateString } from "./time";
 import { fetchWeatherSummary } from "./weather";
 
@@ -34,13 +35,24 @@ async function main(): Promise<void> {
       formatErrorSection("Notion 일정", error instanceof Error ? `일정을 가져오지 못했습니다: ${error.message}` : "일정을 가져오지 못했습니다.")
     );
 
-  const [weatherSection, schedulesSection] = await Promise.all([weatherSectionPromise, scheduleSectionPromise]);
+  const quoteSectionPromise = fetchQuoteOfTheDay()
+    .then((quote) => formatQuoteSection(quote))
+    .catch((error: unknown) =>
+      formatErrorSection("오늘의 명언", error instanceof Error ? `명언을 가져오지 못했습니다: ${error.message}` : "명언을 가져오지 못했습니다.")
+    );
+
+  const [weatherSection, schedulesSection, quoteSection] = await Promise.all([
+    weatherSectionPromise,
+    scheduleSectionPromise,
+    quoteSectionPromise
+  ]);
 
   const content = buildBriefingMessage({
     dateLabel: today,
     ddaySection,
     weatherSection,
-    schedulesSection
+    schedulesSection,
+    quoteSection
   });
 
   await sendDiscordWebhook(config.discord.webhookUrl, content);

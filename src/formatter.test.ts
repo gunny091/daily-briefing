@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBriefingMessage, formatSchedulesSection, formatWeatherSection } from "./formatter";
+import { buildBriefingMessage, formatQuoteSection, formatSchedulesSection, formatWeatherSection } from "./formatter";
 
 describe("formatWeatherSection", () => {
   it("includes current, high/low, precipitation and uv", () => {
@@ -63,11 +63,26 @@ describe("buildBriefingMessage", () => {
       dateLabel: "2026-03-22",
       ddaySection: "D",
       weatherSection: "W",
-      schedulesSection: "N"
+      schedulesSection: "N",
+      quoteSection: "Q"
     });
 
     expect(message).toMatch(/2026-03-22/);
     expect(message.indexOf("D")).toBeLessThan(message.indexOf("W"));
     expect(message.indexOf("W")).toBeLessThan(message.indexOf("N"));
+    expect(message.indexOf("N")).toBeLessThan(message.indexOf("Q"));
+  });
+});
+
+describe("formatQuoteSection", () => {
+  it("renders quote block format", () => {
+    const section = formatQuoteSection({
+      quote: "This is quote",
+      author: "Author"
+    });
+
+    expect(section).toContain("## 오늘의 명언");
+    expect(section).toContain("> This is quote");
+    expect(section).toContain("> - Author");
   });
 });

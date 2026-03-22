@@ -51,3 +51,8 @@ export type NotionScheduleItem = {
   start: string;
   end: string | null;
 };
+
+export type QuoteOfDay = {
+  quote: string;
+  author: string;
+};
