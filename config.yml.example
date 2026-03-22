@@ -1,0 +1,16 @@
+discord:
+  webhookUrl: "https://discord.com/api/webhooks/your/webhook"
+
+weather:
+  label: "My City"
+  latitude: 12.34
+  longitude: 34.56
+
+notion:
+  token: "secret_xxx"
+  databaseId: "your_database_id"
+  dateProperty: "Date"
+
+ddays:
+  - name: "Name"
+    date: "2027-01-01"

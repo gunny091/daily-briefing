@@ -1,0 +1,7 @@
+services:
+  daily-briefing:
+    build:
+      context: .
+    volumes:
+      - ./config.yml:/app/config.yml:ro
+    command: npm start
