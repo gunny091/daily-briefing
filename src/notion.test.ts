@@ -63,4 +63,36 @@ describe("fetchUpcomingSchedules", () => {
       global.fetch = originalFetch;
     }
   });
+
+  it("skips entries when both start and end are missing", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "비정상 데이터" }] },
+                일정: { type: "date", date: { start: null, end: null } }
+              }
+            },
+            {
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "정상 일정" }] },
+                일정: { type: "date", date: { start: "2026-03-24T01:00:00.000Z", end: null } }
+              }
+            }
+          ]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+
+    try {
+      const items = await fetchUpcomingSchedules("token", "db", "일정", "2026-03-22");
+      expect(items).toHaveLength(1);
+      expect(items[0]?.title).toBe("정상 일정");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
 });

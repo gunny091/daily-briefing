@@ -8,7 +8,7 @@ type NotionPage = {
 type NotionDateProperty = {
   type: "date";
   date: {
-    start: string;
+    start: string | null;
     end: string | null;
   } | null;
 };
@@ -36,15 +36,19 @@ function extractTitle(properties: Record<string, NotionProperty>): string {
   return text || "(제목 없음)";
 }
 
-function isUpcoming(dateValue: { start: string; end: string | null }, today: string): boolean {
+function isUpcoming(dateValue: { start: string | null; end: string | null }, today: string): boolean {
   const endCandidate = dateValue.end ? dateValue.end.slice(0, 10) : null;
-  const startCandidate = dateValue.start.slice(0, 10);
+  const startCandidate = dateValue.start ? dateValue.start.slice(0, 10) : null;
 
   if (endCandidate) {
     return endCandidate > today;
   }
 
-  return startCandidate > today;
+  if (startCandidate) {
+    return startCandidate > today;
+  }
+
+  return false;
 }
 
 function sortSchedules(items: NotionScheduleItem[]): NotionScheduleItem[] {
@@ -107,7 +111,7 @@ export async function fetchUpcomingSchedules(
 
     schedules.push({
       title: extractTitle(properties),
-      start: formatIsoLikeForKst(dateField.date.start),
+      start: dateField.date.start ? formatIsoLikeForKst(dateField.date.start) : "",
       end: dateField.date.end ? formatIsoLikeForKst(dateField.date.end) : null
     });
   }
