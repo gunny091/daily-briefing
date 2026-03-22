@@ -17,18 +17,18 @@ discord:
   webhookUrl: "https://discord.com/api/webhooks/your/webhook"
 
 weather:
-  label: "경기도 남양주시 와부읍"
-  latitude: 37.5897
-  longitude: 127.2279
+  label: "My City"
+  latitude: 12.34
+  longitude: 34.56
 
 notion:
   token: "secret_xxx"
   databaseId: "your_database_id"
-  dateProperty: "일정"
+  dateProperty: "Date"
 
 ddays:
-  - name: "프로젝트 마감"
-    date: "2026-04-01"
+  - name: "Name"
+    date: "2027-01-01"
 ```
 
 필수 필드:
