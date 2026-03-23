@@ -81,7 +81,6 @@ function pickTodayHourlyPrecipitation(
 export async function fetchWeatherSummary(
   latitude: number,
   longitude: number,
-  locationLabel: string,
   today: string
 ): Promise<WeatherSummary> {
   const params = new URLSearchParams({
@@ -112,7 +111,6 @@ export async function fetchWeatherSummary(
   const precipitationStartTime = precipitationRows[0]?.time ?? null;
 
   return {
-    locationLabel,
     conditionLabel: mapWeatherCodeToLabel(payload.current?.weather_code),
     currentTemperature: payload.current?.temperature_2m ?? null,
     minTemperature: payload.daily?.temperature_2m_min?.[0] ?? null,

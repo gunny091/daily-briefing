@@ -4,7 +4,6 @@ import { buildBriefingMessage, formatQuoteSection, formatSchedulesSection, forma
 describe("formatWeatherSection", () => {
   it("includes current, high/low, precipitation and uv", () => {
     const section = formatWeatherSection({
-      locationLabel: "서울",
       conditionLabel: "맑음",
       currentTemperature: 10,
       minTemperature: 3,
@@ -25,7 +24,6 @@ describe("formatWeatherSection", () => {
 
   it("handles missing optional weather values", () => {
     const section = formatWeatherSection({
-      locationLabel: "서울",
       conditionLabel: "날씨 정보 없음",
       currentTemperature: null,
       minTemperature: null,

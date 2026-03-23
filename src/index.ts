@@ -15,8 +15,8 @@ async function main(): Promise<void> {
 
   const todayPageLinkPromise = ensureTodayPage(
     config.notion.token,
-    config.notion.dailyPage.databaseId,
-    config.notion.dailyPage.dateProperty,
+    config.notion.daily.databaseId,
+    config.notion.daily.dateProperty,
     today
   )
     .then((page) => formatTodayPageLink(page))
@@ -27,7 +27,6 @@ async function main(): Promise<void> {
   const weatherSectionPromise = fetchWeatherSummary(
     config.weather.latitude,
     config.weather.longitude,
-    config.weather.label,
     today
   )
     .then((summary) => formatWeatherSection(summary))
@@ -37,8 +36,8 @@ async function main(): Promise<void> {
 
   const scheduleSectionPromise = fetchUpcomingSchedules(
     config.notion.token,
-    config.notion.databaseId,
-    config.notion.dateProperty,
+    config.notion.schedule.databaseId,
+    config.notion.schedule.dateProperty,
     today
   )
     .then((items) => formatSchedulesSection(items))

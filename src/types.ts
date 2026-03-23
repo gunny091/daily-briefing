@@ -8,15 +8,16 @@ export type AppConfig = {
     webhookUrl: string;
   };
   weather: {
-    label: string;
     latitude: number;
     longitude: number;
   };
   notion: {
     token: string;
-    databaseId: string;
-    dateProperty: string;
-    dailyPage: {
+    schedule: {
+      databaseId: string;
+      dateProperty: string;
+    };
+    daily: {
       databaseId: string;
       dateProperty: string;
     };
@@ -37,7 +38,6 @@ export type WeatherHourlyPrecipitation = {
 };
 
 export type WeatherSummary = {
-  locationLabel: string;
   conditionLabel: string;
   currentTemperature: number | null;
   minTemperature: number | null;

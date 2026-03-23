@@ -29,14 +29,14 @@ describe("loadConfig", () => {
 discord:
   webhookUrl: "https://discord.test/webhook"
 weather:
-  label: "서울"
   latitude: 37.5665
   longitude: 126.9780
 notion:
   token: "secret"
-  databaseId: "db"
-  dateProperty: "일정"
-  dailyPage:
+  schedule:
+    databaseId: "db"
+    dateProperty: "일정"
+  daily:
     databaseId: "daily-db"
     dateProperty: "날짜"
 ddays:
@@ -46,7 +46,8 @@ ddays:
 
     const config = loadConfig(configPath);
     expect(config.discord.webhookUrl).toBe("https://discord.test/webhook");
-    expect(config.notion.dailyPage.databaseId).toBe("daily-db");
+    expect(config.notion.daily.databaseId).toBe("daily-db");
+    expect(config.notion.schedule.databaseId).toBe("db");
     expect(config.ddays).toHaveLength(1);
   });
 
@@ -55,14 +56,14 @@ ddays:
 discord:
   webhookUrl: ""
 weather:
-  label: "서울"
   latitude: 37.5665
   longitude: 126.9780
 notion:
   token: "secret"
-  databaseId: "db"
-  dateProperty: "일정"
-  dailyPage:
+  schedule:
+    databaseId: "db"
+    dateProperty: "일정"
+  daily:
     databaseId: "daily-db"
     dateProperty: "날짜"
 ddays: []
@@ -76,14 +77,14 @@ ddays: []
 discord:
   webhookUrl: "https://discord.test/webhook"
 weather:
-  label: "서울"
   latitude: 37.5665
   longitude: 126.9780
 notion:
   token: "secret"
-  databaseId: "db"
-  dateProperty: "일정"
-  dailyPage:
+  schedule:
+    databaseId: "db"
+    dateProperty: "일정"
+  daily:
     databaseId: "daily-db"
     dateProperty: "날짜"
 ddays:
@@ -94,21 +95,21 @@ ddays:
     expect(() => loadConfig(configPath)).toThrow(/ddays\[0\]\.date/);
   });
 
-  it("rejects missing daily page config", () => {
+  it("rejects missing daily config", () => {
     const configPath = writeTempConfig(`
 discord:
   webhookUrl: "https://discord.test/webhook"
 weather:
-  label: "서울"
   latitude: 37.5665
   longitude: 126.9780
 notion:
   token: "secret"
-  databaseId: "db"
-  dateProperty: "일정"
+  schedule:
+    databaseId: "db"
+    dateProperty: "일정"
 ddays: []
 `);
 
-    expect(() => loadConfig(configPath)).toThrow(/notion\.dailyPage\.databaseId/);
+    expect(() => loadConfig(configPath)).toThrow(/notion\.daily\.databaseId/);
   });
 });

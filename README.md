@@ -17,15 +17,15 @@ discord:
   webhookUrl: "https://discord.com/api/webhooks/your/webhook"
 
 weather:
-  label: "서울"
   latitude: 37.5665
   longitude: 126.9780
 
 notion:
   token: "secret_xxx"
-  databaseId: "your_schedule_database_id"
-  dateProperty: "Date"
-  dailyPage:
+  schedule:
+    databaseId: "your_schedule_database_id"
+    dateProperty: "Date"
+  daily:
     databaseId: "your_daily_page_database_id"
     dateProperty: "Date"
 
@@ -37,14 +37,13 @@ ddays:
 필수 필드:
 
 - `discord.webhookUrl`
-- `weather.label`
 - `weather.latitude`
 - `weather.longitude`
 - `notion.token`
-- `notion.databaseId`
-- `notion.dateProperty`
-- `notion.dailyPage.databaseId`
-- `notion.dailyPage.dateProperty`
+- `notion.schedule.databaseId`
+- `notion.schedule.dateProperty`
+- `notion.daily.databaseId`
+- `notion.daily.dateProperty`
 - `ddays[].name`
 - `ddays[].date`
 

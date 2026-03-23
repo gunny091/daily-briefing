@@ -52,17 +52,18 @@ export function loadConfig(configPath = path.resolve(process.cwd(), "config.yml"
       webhookUrl: ensureNonEmptyString(discord.webhookUrl, "discord.webhookUrl")
     },
     weather: {
-      label: ensureNonEmptyString(weather.label, "weather.label"),
       latitude: ensureNumber(weather.latitude, "weather.latitude"),
       longitude: ensureNumber(weather.longitude, "weather.longitude")
     },
     notion: {
       token: ensureNonEmptyString(notion.token, "notion.token"),
-      databaseId: ensureNonEmptyString(notion.databaseId, "notion.databaseId"),
-      dateProperty: ensureNonEmptyString(notion.dateProperty, "notion.dateProperty"),
-      dailyPage: {
-        databaseId: ensureNonEmptyString((notion.dailyPage as Record<string, unknown> | undefined)?.databaseId, "notion.dailyPage.databaseId"),
-        dateProperty: ensureNonEmptyString((notion.dailyPage as Record<string, unknown> | undefined)?.dateProperty, "notion.dailyPage.dateProperty")
+      schedule: {
+        databaseId: ensureNonEmptyString((notion.schedule as Record<string, unknown> | undefined)?.databaseId, "notion.schedule.databaseId"),
+        dateProperty: ensureNonEmptyString((notion.schedule as Record<string, unknown> | undefined)?.dateProperty, "notion.schedule.dateProperty")
+      },
+      daily: {
+        databaseId: ensureNonEmptyString((notion.daily as Record<string, unknown> | undefined)?.databaseId, "notion.daily.databaseId"),
+        dateProperty: ensureNonEmptyString((notion.daily as Record<string, unknown> | undefined)?.dateProperty, "notion.daily.dateProperty")
       }
     },
     ddays: ddays.map((item, index) => {
