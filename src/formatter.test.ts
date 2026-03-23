@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { buildBriefingMessage, formatQuoteSection, formatSchedulesSection, formatWeatherSection } from "./formatter";
+import { buildBriefingMessage, formatQuoteSection, formatSchedulesSection, formatTodayPageError, formatTodayPageLink, formatWeatherSection } from "./formatter";
 
 describe("formatWeatherSection", () => {
   it("includes current, high/low, precipitation and uv", () => {
     const section = formatWeatherSection({
-      locationLabel: "와부읍",
+      locationLabel: "서울",
       conditionLabel: "맑음",
       currentTemperature: 10,
       minTemperature: 3,
@@ -25,7 +25,7 @@ describe("formatWeatherSection", () => {
 
   it("handles missing optional weather values", () => {
     const section = formatWeatherSection({
-      locationLabel: "와부읍",
+      locationLabel: "서울",
       conditionLabel: "날씨 정보 없음",
       currentTemperature: null,
       minTemperature: null,
@@ -57,20 +57,35 @@ describe("formatSchedulesSection", () => {
   });
 });
 
+describe("formatTodayPageLink", () => {
+  it("renders today page link", () => {
+    expect(formatTodayPageLink({ title: "2026-03-23", url: "https://notion.so/today" })).toBe(
+      "오늘 페이지: [2026-03-23](https://notion.so/today)"
+    );
+  });
+
+  it("renders today page error message", () => {
+    expect(formatTodayPageError("링크를 가져오지 못했습니다.")).toBe("오늘 페이지: 링크를 가져오지 못했습니다.");
+  });
+});
+
 describe("buildBriefingMessage", () => {
   it("keeps section order", () => {
     const message = buildBriefingMessage({
       dateLabel: "2026-03-22",
-      ddaySection: "D",
-      weatherSection: "W",
-      schedulesSection: "N",
-      quoteSection: "Q"
+      todayPageLinkLine: "TODAY_LINE",
+      ddaySection: "DDAY_LINE",
+      weatherSection: "WEATHER_LINE",
+      schedulesSection: "NOTION_LINE",
+      quoteSection: "QUOTE_LINE"
     });
+    const lines = message.split("\n");
 
     expect(message).toMatch(/2026-03-22/);
-    expect(message.indexOf("D")).toBeLessThan(message.indexOf("W"));
-    expect(message.indexOf("W")).toBeLessThan(message.indexOf("N"));
-    expect(message.indexOf("N")).toBeLessThan(message.indexOf("Q"));
+    expect(lines.indexOf("TODAY_LINE")).toBeLessThan(lines.indexOf("DDAY_LINE"));
+    expect(lines.indexOf("DDAY_LINE")).toBeLessThan(lines.indexOf("WEATHER_LINE"));
+    expect(lines.indexOf("WEATHER_LINE")).toBeLessThan(lines.indexOf("NOTION_LINE"));
+    expect(lines.indexOf("NOTION_LINE")).toBeLessThan(lines.indexOf("QUOTE_LINE"));
   });
 });
 

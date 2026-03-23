@@ -16,6 +16,10 @@ export type AppConfig = {
     token: string;
     databaseId: string;
     dateProperty: string;
+    dailyPage: {
+      databaseId: string;
+      dateProperty: string;
+    };
   };
   ddays: DDayConfig[];
 };
@@ -50,6 +54,11 @@ export type NotionScheduleItem = {
   url: string | null;
   start: string;
   end: string | null;
+};
+
+export type NotionPageLink = {
+  title: string;
+  url: string | null;
 };
 
 export type QuoteOfDay = {

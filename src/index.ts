@@ -1,8 +1,8 @@
 import { loadConfig } from "./config";
 import { buildDdayItems } from "./dday";
 import { sendDiscordWebhook } from "./discord";
-import { buildBriefingMessage, formatDdaySection, formatErrorSection, formatQuoteSection, formatSchedulesSection, formatWeatherSection } from "./formatter";
-import { fetchUpcomingSchedules } from "./notion";
+import { buildBriefingMessage, formatDdaySection, formatErrorSection, formatQuoteSection, formatSchedulesSection, formatTodayPageError, formatTodayPageLink, formatWeatherSection } from "./formatter";
+import { ensureTodayPage, fetchUpcomingSchedules } from "./notion";
 import { fetchQuoteOfTheDay } from "./quote";
 import { toKstDateString } from "./time";
 import { fetchWeatherSummary } from "./weather";
@@ -12,6 +12,17 @@ async function main(): Promise<void> {
   const today = toKstDateString();
 
   const ddaySection = formatDdaySection(buildDdayItems(config.ddays, today));
+
+  const todayPageLinkPromise = ensureTodayPage(
+    config.notion.token,
+    config.notion.dailyPage.databaseId,
+    config.notion.dailyPage.dateProperty,
+    today
+  )
+    .then((page) => formatTodayPageLink(page))
+    .catch((error: unknown) =>
+      formatTodayPageError(error instanceof Error ? `링크를 가져오지 못했습니다: ${error.message}` : "링크를 가져오지 못했습니다.")
+    );
 
   const weatherSectionPromise = fetchWeatherSummary(
     config.weather.latitude,
@@ -41,7 +52,8 @@ async function main(): Promise<void> {
       formatErrorSection("오늘의 명언", error instanceof Error ? `명언을 가져오지 못했습니다: ${error.message}` : "명언을 가져오지 못했습니다.")
     );
 
-  const [weatherSection, schedulesSection, quoteSection] = await Promise.all([
+  const [todayPageLinkLine, weatherSection, schedulesSection, quoteSection] = await Promise.all([
+    todayPageLinkPromise,
     weatherSectionPromise,
     scheduleSectionPromise,
     quoteSectionPromise
@@ -49,6 +61,7 @@ async function main(): Promise<void> {
 
   const content = buildBriefingMessage({
     dateLabel: today,
+    todayPageLinkLine,
     ddaySection,
     weatherSection,
     schedulesSection,

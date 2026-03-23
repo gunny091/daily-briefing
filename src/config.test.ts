@@ -29,13 +29,16 @@ describe("loadConfig", () => {
 discord:
   webhookUrl: "https://discord.test/webhook"
 weather:
-  label: "와부읍"
-  latitude: 37.5
-  longitude: 127.2
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
 notion:
   token: "secret"
   databaseId: "db"
   dateProperty: "일정"
+  dailyPage:
+    databaseId: "daily-db"
+    dateProperty: "날짜"
 ddays:
   - name: "test"
     date: "2026-03-30"
@@ -43,6 +46,7 @@ ddays:
 
     const config = loadConfig(configPath);
     expect(config.discord.webhookUrl).toBe("https://discord.test/webhook");
+    expect(config.notion.dailyPage.databaseId).toBe("daily-db");
     expect(config.ddays).toHaveLength(1);
   });
 
@@ -51,13 +55,16 @@ ddays:
 discord:
   webhookUrl: ""
 weather:
-  label: "와부읍"
-  latitude: 37.5
-  longitude: 127.2
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
 notion:
   token: "secret"
   databaseId: "db"
   dateProperty: "일정"
+  dailyPage:
+    databaseId: "daily-db"
+    dateProperty: "날짜"
 ddays: []
 `);
 
@@ -69,18 +76,39 @@ ddays: []
 discord:
   webhookUrl: "https://discord.test/webhook"
 weather:
-  label: "와부읍"
-  latitude: 37.5
-  longitude: 127.2
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
 notion:
   token: "secret"
   databaseId: "db"
   dateProperty: "일정"
+  dailyPage:
+    databaseId: "daily-db"
+    dateProperty: "날짜"
 ddays:
   - name: "test"
     date: "03-30-2026"
 `);
 
     expect(() => loadConfig(configPath)).toThrow(/ddays\[0\]\.date/);
+  });
+
+  it("rejects missing daily page config", () => {
+    const configPath = writeTempConfig(`
+discord:
+  webhookUrl: "https://discord.test/webhook"
+weather:
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
+notion:
+  token: "secret"
+  databaseId: "db"
+  dateProperty: "일정"
+ddays: []
+`);
+
+    expect(() => loadConfig(configPath)).toThrow(/notion\.dailyPage\.databaseId/);
   });
 });

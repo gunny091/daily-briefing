@@ -17,14 +17,17 @@ discord:
   webhookUrl: "https://discord.com/api/webhooks/your/webhook"
 
 weather:
-  label: "My City"
-  latitude: 12.34
-  longitude: 34.56
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
 
 notion:
   token: "secret_xxx"
-  databaseId: "your_database_id"
+  databaseId: "your_schedule_database_id"
   dateProperty: "Date"
+  dailyPage:
+    databaseId: "your_daily_page_database_id"
+    dateProperty: "Date"
 
 ddays:
   - name: "Name"
@@ -40,6 +43,8 @@ ddays:
 - `notion.token`
 - `notion.databaseId`
 - `notion.dateProperty`
+- `notion.dailyPage.databaseId`
+- `notion.dailyPage.dateProperty`
 - `ddays[].name`
 - `ddays[].date`
 
@@ -72,11 +77,12 @@ docker compose up --build
 브리핑 순서:
 
 1. KST 기준 오늘 날짜 계산
-2. D-day 계산
-3. Open-Meteo에서 오늘 날씨 조회
-4. Notion 데이터베이스에서 오늘 이후 일정 조회
-5. ZenQuotes에서 오늘의 명언 조회
-6. Discord webhook으로 단일 텍스트 메시지 전송
+2. Notion 데이터베이스에서 오늘 페이지 조회 또는 생성
+3. D-day 계산
+4. Open-Meteo에서 오늘 날씨 조회
+5. Notion 데이터베이스에서 오늘 이후 일정 조회
+6. ZenQuotes에서 오늘의 명언 조회
+7. Discord webhook으로 단일 텍스트 메시지 전송
 
 사용하는 외부 API:
 

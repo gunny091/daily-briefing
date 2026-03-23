@@ -2,14 +2,17 @@ discord:
   webhookUrl: "https://discord.com/api/webhooks/your/webhook"
 
 weather:
-  label: "My City"
-  latitude: 12.34
-  longitude: 34.56
+  label: "서울"
+  latitude: 37.5665
+  longitude: 126.9780
 
 notion:
   token: "secret_xxx"
-  databaseId: "your_database_id"
+  databaseId: "your_schedule_database_id"
   dateProperty: "Date"
+  dailyPage:
+    databaseId: "your_daily_page_database_id"
+    dateProperty: "Date"
 
 ddays:
   - name: "Name"

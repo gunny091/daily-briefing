@@ -1,4 +1,4 @@
-import type { DDayItem, NotionScheduleItem, QuoteOfDay, WeatherSummary } from "./types";
+import type { DDayItem, NotionPageLink, NotionScheduleItem, QuoteOfDay, WeatherSummary } from "./types";
 
 function formatNumber(value: number | null, suffix = ""): string {
   return value === null ? "정보 없음" : `${value}${suffix}`;
@@ -54,6 +54,15 @@ export function formatSchedulesSection(items: NotionScheduleItem[]): string {
   return ["## Notion 일정", ...lines].join("\n");
 }
 
+export function formatTodayPageLink(item: NotionPageLink): string {
+  const title = item.url ? `[${item.title}](${item.url})` : item.title;
+  return `오늘 페이지: ${title}`;
+}
+
+export function formatTodayPageError(message: string): string {
+  return `오늘 페이지: ${message}`;
+}
+
 export function formatErrorSection(title: string, message: string): string {
   return `## ${title}\n- ${message}`;
 }
@@ -64,6 +73,7 @@ export function formatQuoteSection(quote: QuoteOfDay): string {
 
 export function buildBriefingMessage(input: {
   dateLabel: string;
+  todayPageLinkLine: string;
   ddaySection: string;
   weatherSection: string;
   schedulesSection: string;
@@ -71,6 +81,7 @@ export function buildBriefingMessage(input: {
 }): string {
   return [
     `# Daily Briefing - ${input.dateLabel}`,
+    input.todayPageLinkLine,
     "",
     input.ddaySection,
     "",

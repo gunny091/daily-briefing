@@ -1,7 +1,8 @@
 import { formatIsoLikeForKst } from "./time";
-import type { NotionScheduleItem } from "./types";
+import type { NotionPageLink, NotionScheduleItem } from "./types";
 
 type NotionPage = {
+  id?: string;
   properties?: Record<string, NotionProperty>;
   url?: string;
 };
@@ -21,11 +22,49 @@ type NotionTitleProperty = {
   }>;
 };
 
+type NotionDatabaseProperty = {
+  id?: string;
+  name?: string;
+  type: string;
+};
+
 type NotionProperty = NotionDateProperty | NotionTitleProperty | { type: string; [key: string]: unknown };
 
 type NotionQueryResponse = {
   results?: NotionPage[];
 };
+
+type NotionDatabaseResponse = {
+  properties?: Record<string, NotionDatabaseProperty>;
+};
+
+type NotionCreatePageResponse = {
+  url?: string;
+};
+
+function buildHeaders(token: string): Record<string, string> {
+  return {
+    "Authorization": `Bearer ${token}`,
+    "Content-Type": "application/json",
+    "Notion-Version": "2022-06-28"
+  };
+}
+
+async function notionRequest<T>(token: string, url: string, init: RequestInit, errorPrefix: string): Promise<T> {
+  const response = await fetch(url, {
+    ...init,
+    headers: {
+      ...buildHeaders(token),
+      ...init.headers
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`${errorPrefix} failed with status ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
 
 function extractTitle(properties: Record<string, NotionProperty>): string {
   const titleProperty = Object.values(properties).find((property) => property.type === "title") as NotionTitleProperty | undefined;
@@ -56,45 +95,107 @@ function sortSchedules(items: NotionScheduleItem[]): NotionScheduleItem[] {
   return [...items].sort((left, right) => left.start.localeCompare(right.start));
 }
 
+function isDateOnlyStart(value: string | null | undefined): value is string {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+async function queryDatabase(token: string, databaseId: string, body: Record<string, unknown>): Promise<NotionQueryResponse> {
+  return notionRequest<NotionQueryResponse>(
+    token,
+    `https://api.notion.com/v1/databases/${databaseId}/query`,
+    {
+      method: "POST",
+      body: JSON.stringify(body)
+    },
+    "Notion request"
+  );
+}
+
+async function getDatabase(token: string, databaseId: string): Promise<NotionDatabaseResponse> {
+  return notionRequest<NotionDatabaseResponse>(
+    token,
+    `https://api.notion.com/v1/databases/${databaseId}`,
+    {
+      method: "GET"
+    },
+    "Notion database request"
+  );
+}
+
+async function createPage(
+  token: string,
+  databaseId: string,
+  titlePropertyName: string,
+  title: string,
+  dateProperty: string,
+  today: string
+): Promise<NotionCreatePageResponse> {
+  return notionRequest<NotionCreatePageResponse>(
+    token,
+    "https://api.notion.com/v1/pages",
+    {
+      method: "POST",
+      body: JSON.stringify({
+        parent: {
+          database_id: databaseId
+        },
+        properties: {
+          [titlePropertyName]: {
+            title: [
+              {
+                text: {
+                  content: title
+                }
+              }
+            ]
+          },
+          [dateProperty]: {
+            date: {
+              start: today
+            }
+          }
+        }
+      })
+    },
+    "Notion create page request"
+  );
+}
+
+function findTitlePropertyName(properties: Record<string, NotionDatabaseProperty>): string | null {
+  for (const [name, property] of Object.entries(properties)) {
+    if (property.type === "title") {
+      return name;
+    }
+  }
+
+  return null;
+}
+
 export async function fetchUpcomingSchedules(
   token: string,
   databaseId: string,
   dateProperty: string,
   today: string
 ): Promise<NotionScheduleItem[]> {
-  const response = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-    method: "POST",
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Notion-Version": "2022-06-28"
-    },
-    body: JSON.stringify({
-      page_size: 100,
-      filter: {
-        or: [
-          {
-            property: dateProperty,
-            date: {
-              after: today
-            }
-          },
-          {
-            property: dateProperty,
-            date: {
-              on_or_after: today
-            }
+  const payload = await queryDatabase(token, databaseId, {
+    page_size: 100,
+    filter: {
+      or: [
+        {
+          property: dateProperty,
+          date: {
+            after: today
           }
-        ]
-      }
-    })
+        },
+        {
+          property: dateProperty,
+          date: {
+            on_or_after: today
+          }
+        }
+      ]
+    }
   });
-
-  if (!response.ok) {
-    throw new Error(`Notion request failed with status ${response.status}`);
-  }
-
-  const payload = (await response.json()) as NotionQueryResponse;
   const results = payload.results ?? [];
 
   const schedules: NotionScheduleItem[] = [];
@@ -119,4 +220,49 @@ export async function fetchUpcomingSchedules(
   }
 
   return sortSchedules(schedules);
+}
+
+export async function ensureTodayPage(
+  token: string,
+  databaseId: string,
+  dateProperty: string,
+  today: string
+): Promise<NotionPageLink> {
+  const payload = await queryDatabase(token, databaseId, {
+    page_size: 100,
+    filter: {
+      property: dateProperty,
+      date: {
+        equals: today
+      }
+    }
+  });
+
+  for (const page of payload.results ?? []) {
+    const properties = page.properties ?? {};
+    const dateField = properties[dateProperty] as NotionDateProperty | undefined;
+    const start = dateField?.type === "date" ? dateField.date?.start : null;
+    const end = dateField?.type === "date" ? dateField.date?.end : null;
+
+    if (start?.slice(0, 10) !== today || end !== null || !isDateOnlyStart(start)) {
+      continue;
+    }
+
+    return {
+      title: extractTitle(properties),
+      url: page.url ?? null
+    };
+  }
+
+  const database = await getDatabase(token, databaseId);
+  const titlePropertyName = findTitlePropertyName(database.properties ?? {});
+  if (!titlePropertyName) {
+    throw new Error("Notion database is missing a title property");
+  }
+
+  const created = await createPage(token, databaseId, titlePropertyName, today, dateProperty, today);
+  return {
+    title: today,
+    url: created.url ?? null
+  };
 }

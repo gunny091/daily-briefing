@@ -59,7 +59,11 @@ export function loadConfig(configPath = path.resolve(process.cwd(), "config.yml"
     notion: {
       token: ensureNonEmptyString(notion.token, "notion.token"),
       databaseId: ensureNonEmptyString(notion.databaseId, "notion.databaseId"),
-      dateProperty: ensureNonEmptyString(notion.dateProperty, "notion.dateProperty")
+      dateProperty: ensureNonEmptyString(notion.dateProperty, "notion.dateProperty"),
+      dailyPage: {
+        databaseId: ensureNonEmptyString((notion.dailyPage as Record<string, unknown> | undefined)?.databaseId, "notion.dailyPage.databaseId"),
+        dateProperty: ensureNonEmptyString((notion.dailyPage as Record<string, unknown> | undefined)?.dateProperty, "notion.dailyPage.dateProperty")
+      }
     },
     ddays: ddays.map((item, index) => {
       const row = item as Record<string, unknown>;
