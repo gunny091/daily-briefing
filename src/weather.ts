@@ -3,12 +3,14 @@ import type { WeatherHourlyPrecipitation, WeatherSummary } from "./types";
 type OpenMeteoResponse = {
   current?: {
     temperature_2m?: number;
-    weather_code?: number;
   };
   daily?: {
+    weather_code?: number[];
     temperature_2m_max?: number[];
     temperature_2m_min?: number[];
     uv_index_max?: number[];
+    precipitation_probability_max?: Array<number | null>;
+    precipitation_sum?: Array<number | null>;
   };
   hourly?: {
     time?: string[];
@@ -78,6 +80,16 @@ function pickTodayHourlyPrecipitation(
   return highlighted.length > 0 ? highlighted : rows.slice(0, 6);
 }
 
+function pickPrecipitationStartTime(
+  time: string[],
+  probabilities: Array<number | null>,
+  amounts: Array<number | null>,
+  today: string
+): string | null {
+  const rows = pickTodayHourlyPrecipitation(time, probabilities, amounts, today);
+  return rows.find((row) => (row.probability ?? 0) > 0 || (row.amount ?? 0) > 0)?.time ?? null;
+}
+
 export async function fetchWeatherSummary(
   latitude: number,
   longitude: number,
@@ -86,8 +98,8 @@ export async function fetchWeatherSummary(
   const params = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
-    current: "temperature_2m,weather_code",
-    daily: "temperature_2m_max,temperature_2m_min,uv_index_max",
+    current: "temperature_2m",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,precipitation_probability_max,precipitation_sum",
     hourly: "precipitation_probability,precipitation",
     forecast_days: "1",
     timezone: "Asia/Seoul"
@@ -102,23 +114,16 @@ export async function fetchWeatherSummary(
   const hourlyTime = payload.hourly?.time ?? [];
   const probabilities = payload.hourly?.precipitation_probability ?? [];
   const amounts = payload.hourly?.precipitation ?? [];
-  const todayHourly = pickTodayHourlyPrecipitation(hourlyTime, probabilities, amounts, today);
-  const precipitationRows = todayHourly.filter((row) => (row.probability ?? 0) > 0 || (row.amount ?? 0) > 0);
-  const precipitationProbabilityMax =
-    precipitationRows.length > 0 ? Math.max(...precipitationRows.map((row) => row.probability ?? 0)) : 0;
-  const precipitationAmountMax =
-    precipitationRows.length > 0 ? Math.max(...precipitationRows.map((row) => row.amount ?? 0)) : 0;
-  const precipitationStartTime = precipitationRows[0]?.time ?? null;
+  const precipitationStartTime = pickPrecipitationStartTime(hourlyTime, probabilities, amounts, today);
 
   return {
-    conditionLabel: mapWeatherCodeToLabel(payload.current?.weather_code),
+    conditionLabel: mapWeatherCodeToLabel(payload.daily?.weather_code?.[0]),
     currentTemperature: payload.current?.temperature_2m ?? null,
     minTemperature: payload.daily?.temperature_2m_min?.[0] ?? null,
     maxTemperature: payload.daily?.temperature_2m_max?.[0] ?? null,
     uvIndexMax: payload.daily?.uv_index_max?.[0] ?? null,
-    precipitationProbabilityMax,
-    precipitationAmountMax,
-    precipitationStartTime,
-    hourlyPrecipitation: todayHourly
+    precipitationProbabilityMax: payload.daily?.precipitation_probability_max?.[0] ?? null,
+    precipitationAmountMax: payload.daily?.precipitation_sum?.[0] ?? null,
+    precipitationStartTime
   };
 }

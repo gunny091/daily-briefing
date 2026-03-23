@@ -46,7 +46,6 @@ export type WeatherSummary = {
   precipitationProbabilityMax: number | null;
   precipitationAmountMax: number | null;
   precipitationStartTime: string | null;
-  hourlyPrecipitation: WeatherHourlyPrecipitation[];
 };
 
 export type NotionScheduleItem = {

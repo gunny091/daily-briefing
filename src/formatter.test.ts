@@ -11,8 +11,7 @@ describe("formatWeatherSection", () => {
       uvIndexMax: 5,
       precipitationProbabilityMax: 30,
       precipitationAmountMax: 1.2,
-      precipitationStartTime: "09:00",
-      hourlyPrecipitation: [{ time: "09:00", probability: 30, amount: 1.2 }]
+      precipitationStartTime: "09:00"
     });
 
     expect(section).toContain("- 맑음");
@@ -31,8 +30,7 @@ describe("formatWeatherSection", () => {
       uvIndexMax: null,
       precipitationProbabilityMax: null,
       precipitationAmountMax: null,
-      precipitationStartTime: null,
-      hourlyPrecipitation: []
+      precipitationStartTime: null
     });
 
     expect(section).toContain("정보 없음");
