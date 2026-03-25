@@ -1,4 +1,4 @@
-import { formatIsoLikeForKst } from "./time";
+import { formatIsoLikeForKst, toKstDateString } from "./time";
 import type { NotionPageLink, NotionScheduleItem } from "./types";
 
 type NotionPage = {
@@ -32,6 +32,8 @@ type NotionProperty = NotionDateProperty | NotionTitleProperty | { type: string;
 
 type NotionQueryResponse = {
   results?: NotionPage[];
+  has_more?: boolean;
+  next_cursor?: string | null;
 };
 
 type NotionDatabaseResponse = {
@@ -77,8 +79,8 @@ function extractTitle(properties: Record<string, NotionProperty>): string {
 }
 
 function isUpcoming(dateValue: { start: string | null; end: string | null }, today: string): boolean {
-  const endCandidate = dateValue.end ? dateValue.end.slice(0, 10) : null;
-  const startCandidate = dateValue.start ? dateValue.start.slice(0, 10) : null;
+  const endCandidate = toKstDateOnly(dateValue.end);
+  const startCandidate = toKstDateOnly(dateValue.start);
 
   if (endCandidate) {
     return endCandidate >= today;
@@ -99,6 +101,35 @@ function isDateOnlyStart(value: string | null | undefined): value is string {
   return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function toKstDateOnly(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  if (isDateOnlyStart(value)) {
+    return value;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return toKstDateString(parsed);
+}
+
+function formatScheduleDateForDisplay(value: string | null): string {
+  if (!value) {
+    return "";
+  }
+
+  if (isDateOnlyStart(value)) {
+    return value;
+  }
+
+  return formatIsoLikeForKst(value);
+}
+
 async function queryDatabase(token: string, databaseId: string, body: Record<string, unknown>): Promise<NotionQueryResponse> {
   return notionRequest<NotionQueryResponse>(
     token,
@@ -109,6 +140,30 @@ async function queryDatabase(token: string, databaseId: string, body: Record<str
     },
     "Notion request"
   );
+}
+
+async function queryAllDatabasePages(
+  token: string,
+  databaseId: string,
+  body: Record<string, unknown>
+): Promise<NotionPage[]> {
+  const results: NotionPage[] = [];
+  let startCursor: string | undefined;
+
+  while (true) {
+    const payload = await queryDatabase(token, databaseId, {
+      ...body,
+      start_cursor: startCursor
+    });
+
+    results.push(...(payload.results ?? []));
+
+    if (!payload.has_more || !payload.next_cursor) {
+      return results;
+    }
+
+    startCursor = payload.next_cursor;
+  }
 }
 
 async function getDatabase(token: string, databaseId: string): Promise<NotionDatabaseResponse> {
@@ -177,16 +232,22 @@ export async function fetchUpcomingSchedules(
   dateProperty: string,
   today: string
 ): Promise<NotionScheduleItem[]> {
-  const payload = await queryDatabase(token, databaseId, {
+  const todayStart = `${today}T00:00:00+09:00`;
+  const results = await queryAllDatabasePages(token, databaseId, {
     page_size: 100,
+    sorts: [
+      {
+        property: dateProperty,
+        direction: "ascending"
+      }
+    ],
     filter: {
       property: dateProperty,
       date: {
-        on_or_after: today
+        on_or_after: todayStart
       }
     }
   });
-  const results = payload.results ?? [];
 
   const schedules: NotionScheduleItem[] = [];
 
@@ -204,8 +265,8 @@ export async function fetchUpcomingSchedules(
     schedules.push({
       title: extractTitle(properties),
       url: page.url ?? null,
-      start: dateField.date.start ? formatIsoLikeForKst(dateField.date.start) : "",
-      end: dateField.date.end ? formatIsoLikeForKst(dateField.date.end) : null
+      start: formatScheduleDateForDisplay(dateField.date.start),
+      end: formatScheduleDateForDisplay(dateField.date.end) || null
     });
   }
 
@@ -218,7 +279,7 @@ export async function ensureTodayPage(
   dateProperty: string,
   today: string
 ): Promise<NotionPageLink> {
-  const payload = await queryDatabase(token, databaseId, {
+  const results = await queryAllDatabasePages(token, databaseId, {
     page_size: 100,
     filter: {
       property: dateProperty,
@@ -228,13 +289,14 @@ export async function ensureTodayPage(
     }
   });
 
-  for (const page of payload.results ?? []) {
+  for (const page of results) {
     const properties = page.properties ?? {};
     const dateField = properties[dateProperty] as NotionDateProperty | undefined;
     const start = dateField?.type === "date" ? dateField.date?.start : null;
     const end = dateField?.type === "date" ? dateField.date?.end : null;
+    const startDate = toKstDateOnly(start);
 
-    if (start?.slice(0, 10) !== today || end !== null || !isDateOnlyStart(start)) {
+    if (startDate !== today || end !== null || !isDateOnlyStart(start)) {
       continue;
     }
 

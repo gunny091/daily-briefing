@@ -8,13 +8,18 @@ function formatCompactNumber(value: number | null): string {
   return value === null ? "정보 없음" : `${value}`;
 }
 
-function formatMonthDay(value: string): string {
-  const matched = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+function formatScheduleLabel(value: string): string {
+  const matched = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
   if (!matched) {
     return value;
   }
 
-  return `${Number(matched[2])}/${Number(matched[3])}`;
+  const monthDay = `${Number(matched[2])}/${Number(matched[3])}`;
+  if (matched[4] && matched[5]) {
+    return `${monthDay} ${matched[4]}:${matched[5]}`;
+  }
+
+  return monthDay;
 }
 
 export function formatDdaySection(items: DDayItem[]): string {
@@ -48,7 +53,7 @@ export function formatSchedulesSection(items: NotionScheduleItem[]): string {
 
   const lines = items.map((item) => {
     const title = item.url ? `[${item.title}](${item.url})` : item.title;
-    return `- ${title}: ${formatMonthDay(item.start)}`;
+    return `- ${title}: ${formatScheduleLabel(item.start)}`;
   });
 
   return ["## Notion 일정", ...lines].join("\n");

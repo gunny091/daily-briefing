@@ -48,6 +48,75 @@ describe("fetchUpcomingSchedules", () => {
     }
   });
 
+  it("includes today entries even when the API returns a UTC timestamp for a KST morning time", async () => {
+    const originalFetch = global.fetch;
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    global.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      calls.push({ url, init });
+
+      return new Response(
+        JSON.stringify({
+          results: [
+            {
+              url: "https://www.notion.so/morning",
+              properties: {
+                제목: { type: "title", title: [{ plain_text: "오전 일정" }] },
+                일정: { type: "date", date: { start: "2026-03-25T23:40:00.000Z", end: null } }
+              }
+            }
+          ]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    try {
+      const items = await fetchUpcomingSchedules("token", "db", "일정", "2026-03-26");
+      expect(items).toHaveLength(1);
+      expect(items[0]?.title).toBe("오전 일정");
+      expect(items[0]?.start).toContain("KST");
+      const queryCall = calls.find((call) => call.url.endsWith("/query"));
+      expect(JSON.parse(String(queryCall?.init?.body))).toMatchObject({
+        filter: {
+          property: "일정",
+          date: {
+            on_or_after: "2026-03-26T00:00:00+09:00"
+          }
+        }
+      });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it("keeps date-only schedule values date-only in the output", async () => {
+    const originalFetch = global.fetch;
+    global.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              url: "https://www.notion.so/all-day",
+              properties: {
+                제목: { type: "title", title: [{ plain_text: "종일 일정" }] },
+                일정: { type: "date", date: { start: "2026-03-26", end: null } }
+              }
+            }
+          ]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+
+    try {
+      const items = await fetchUpcomingSchedules("token", "db", "일정", "2026-03-26");
+      expect(items).toHaveLength(1);
+      expect(items[0]?.start).toBe("2026-03-26");
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it("falls back to untitled when title property is missing", async () => {
     const originalFetch = global.fetch;
     global.fetch = async () =>

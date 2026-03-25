@@ -49,7 +49,16 @@ describe("formatSchedulesSection", () => {
     ]);
 
     expect(section).toContain("[회의](https://notion.so/example)");
+    expect(section).toContain("3/23 09:00");
+  });
+
+  it("renders date-only items without a time", () => {
+    const section = formatSchedulesSection([
+      { title: "종일 일정", url: null, start: "2026-03-23", end: null }
+    ]);
+
     expect(section).toContain("3/23");
+    expect(section).not.toContain("3/23 ");
   });
 });
 

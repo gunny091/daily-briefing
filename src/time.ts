@@ -2,7 +2,7 @@ const KST_OFFSET_HOURS = 9;
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export function getKstNow(reference = new Date()): Date {
-  return new Date(reference.getTime() + reference.getTimezoneOffset() * 60_000 + KST_OFFSET_HOURS * 60 * 60_000);
+  return new Date(reference.getTime() + KST_OFFSET_HOURS * 60 * 60_000);
 }
 
 export function toKstDateString(reference = new Date()): string {
