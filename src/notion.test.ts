@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ensureTodayPage, fetchUpcomingSchedules } from "./notion";
 
 describe("fetchUpcomingSchedules", () => {
-  it("includes entries using end date when present and start date when end is missing", async () => {
+  it("includes entries using end date when present and start date when end is missing, including today", async () => {
     const originalFetch = global.fetch;
     global.fetch = async () =>
       new Response(
@@ -16,18 +16,19 @@ describe("fetchUpcomingSchedules", () => {
               }
             },
             {
+              url: "https://www.notion.so/today",
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "오늘" }] },
+                일정: { type: "date", date: { start: "2026-03-22T01:00:00.000Z", end: null } }
+              }
+            },
+            {
               url: "https://www.notion.so/meeting",
               properties: {
                 Name: { type: "title", title: [{ plain_text: "회의" }] },
                 일정: { type: "date", date: { start: "2026-03-24T01:00:00.000Z", end: null } }
               }
             },
-            {
-              properties: {
-                Name: { type: "title", title: [{ plain_text: "제외" }] },
-                일정: { type: "date", date: { start: "2026-03-22T01:00:00.000Z", end: null } }
-              }
-            }
           ]
         }),
         { status: 200, headers: { "Content-Type": "application/json" } }
@@ -35,9 +36,13 @@ describe("fetchUpcomingSchedules", () => {
 
     try {
       const items = await fetchUpcomingSchedules("token", "db", "일정", "2026-03-22");
-      expect(items).toHaveLength(2);
-      expect(items.map((item) => item.title)).toEqual(["출장", "회의"]);
-      expect(items.map((item) => item.url)).toEqual(["https://www.notion.so/trip", "https://www.notion.so/meeting"]);
+      expect(items).toHaveLength(3);
+      expect(items.map((item) => item.title)).toEqual(["출장", "오늘", "회의"]);
+      expect(items.map((item) => item.url)).toEqual([
+        "https://www.notion.so/trip",
+        "https://www.notion.so/today",
+        "https://www.notion.so/meeting"
+      ]);
     } finally {
       global.fetch = originalFetch;
     }

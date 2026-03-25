@@ -81,11 +81,11 @@ function isUpcoming(dateValue: { start: string | null; end: string | null }, tod
   const startCandidate = dateValue.start ? dateValue.start.slice(0, 10) : null;
 
   if (endCandidate) {
-    return endCandidate > today;
+    return endCandidate >= today;
   }
 
   if (startCandidate) {
-    return startCandidate > today;
+    return startCandidate >= today;
   }
 
   return false;
@@ -180,20 +180,10 @@ export async function fetchUpcomingSchedules(
   const payload = await queryDatabase(token, databaseId, {
     page_size: 100,
     filter: {
-      or: [
-        {
-          property: dateProperty,
-          date: {
-            after: today
-          }
-        },
-        {
-          property: dateProperty,
-          date: {
-            on_or_after: today
-          }
-        }
-      ]
+      property: dateProperty,
+      date: {
+        on_or_after: today
+      }
     }
   });
   const results = payload.results ?? [];
