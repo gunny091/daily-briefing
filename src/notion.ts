@@ -1,4 +1,4 @@
-import { formatIsoLikeForKst, toKstDateString } from "./time";
+import { addDaysToDateOnly, formatIsoLikeForKst, toKstDateString } from "./time";
 import type { NotionPageLink, NotionScheduleItem } from "./types";
 
 type NotionPage = {
@@ -78,16 +78,20 @@ function extractTitle(properties: Record<string, NotionProperty>): string {
   return text || "(제목 없음)";
 }
 
-function isUpcoming(dateValue: { start: string | null; end: string | null }, today: string): boolean {
+function isUpcoming(
+  dateValue: { start: string | null; end: string | null },
+  today: string,
+  latestDate: string
+): boolean {
   const endCandidate = toKstDateOnly(dateValue.end);
   const startCandidate = toKstDateOnly(dateValue.start);
 
   if (endCandidate) {
-    return endCandidate >= today;
+    return endCandidate >= today && endCandidate <= latestDate;
   }
 
   if (startCandidate) {
-    return startCandidate >= today;
+    return startCandidate >= today && startCandidate <= latestDate;
   }
 
   return false;
@@ -233,6 +237,8 @@ export async function fetchUpcomingSchedules(
   today: string
 ): Promise<NotionScheduleItem[]> {
   const todayStart = `${today}T00:00:00+09:00`;
+  const latestDate = addDaysToDateOnly(today, 30);
+  const latestDateEnd = `${latestDate}T23:59:59+09:00`;
   const results = await queryAllDatabasePages(token, databaseId, {
     page_size: 100,
     sorts: [
@@ -242,10 +248,20 @@ export async function fetchUpcomingSchedules(
       }
     ],
     filter: {
-      property: dateProperty,
-      date: {
-        on_or_after: todayStart
-      }
+      and: [
+        {
+          property: dateProperty,
+          date: {
+            on_or_after: todayStart
+          }
+        },
+        {
+          property: dateProperty,
+          date: {
+            on_or_before: latestDateEnd
+          }
+        }
+      ]
     }
   });
 
@@ -258,7 +274,7 @@ export async function fetchUpcomingSchedules(
       continue;
     }
 
-    if (!isUpcoming(dateField.date, today)) {
+    if (!isUpcoming(dateField.date, today, latestDate)) {
       continue;
     }
 

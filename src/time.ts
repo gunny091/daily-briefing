@@ -19,6 +19,12 @@ export function parseDateOnlyToUtc(date: string): Date {
   return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
 }
 
+export function addDaysToDateOnly(date: string, days: number): string {
+  const parsed = parseDateOnlyToUtc(date);
+  parsed.setUTCDate(parsed.getUTCDate() + days);
+  return parsed.toISOString().slice(0, 10);
+}
+
 export function diffDaysKst(targetDate: string, baseDate: string): number {
   const target = parseDateOnlyToUtc(targetDate);
   const base = parseDateOnlyToUtc(baseDate);

@@ -2,6 +2,84 @@ import { describe, expect, it } from "vitest";
 import { ensureTodayPage, fetchUpcomingSchedules } from "./notion";
 
 describe("fetchUpcomingSchedules", () => {
+  it("includes entries within today to 30 days and excludes later ones", async () => {
+    const originalFetch = global.fetch;
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    global.fetch = async (input, init) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+      calls.push({ url, init });
+
+      return new Response(
+        JSON.stringify({
+          results: [
+            {
+              url: "https://www.notion.so/trip",
+              properties: {
+                제목: { type: "title", title: [{ plain_text: "출장" }] },
+                일정: { type: "date", date: { start: "2026-03-20T09:00:00.000Z", end: "2026-03-23T09:00:00.000Z" } }
+              }
+            },
+            {
+              url: "https://www.notion.so/today",
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "오늘" }] },
+                일정: { type: "date", date: { start: "2026-03-22T01:00:00.000Z", end: null } }
+              }
+            },
+            {
+              url: "https://www.notion.so/meeting",
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "회의" }] },
+                일정: { type: "date", date: { start: "2026-03-24T01:00:00.000Z", end: null } }
+              }
+            },
+            {
+              url: "https://www.notion.so/later",
+              properties: {
+                Name: { type: "title", title: [{ plain_text: "한 달 뒤 밖" }] },
+                일정: { type: "date", date: { start: "2026-04-24T01:00:00.000Z", end: null } }
+              }
+            }
+          ]
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    try {
+      const items = await fetchUpcomingSchedules("token", "db", "일정", "2026-03-22");
+      expect(items).toHaveLength(3);
+      expect(items.map((item) => item.title)).toEqual(["출장", "오늘", "회의"]);
+      expect(items.map((item) => item.url)).toEqual([
+        "https://www.notion.so/trip",
+        "https://www.notion.so/today",
+        "https://www.notion.so/meeting"
+      ]);
+
+      const queryCall = calls.find((call) => call.url.endsWith("/query"));
+      expect(JSON.parse(String(queryCall?.init?.body))).toMatchObject({
+        filter: {
+          and: [
+            {
+              property: "일정",
+              date: {
+                on_or_after: "2026-03-22T00:00:00+09:00"
+              }
+            },
+            {
+              property: "일정",
+              date: {
+                on_or_before: "2026-04-21T23:59:59+09:00"
+              }
+            }
+          ]
+        }
+      });
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
   it("includes entries using end date when present and start date when end is missing, including today", async () => {
     const originalFetch = global.fetch;
     global.fetch = async () =>
@@ -79,10 +157,20 @@ describe("fetchUpcomingSchedules", () => {
       const queryCall = calls.find((call) => call.url.endsWith("/query"));
       expect(JSON.parse(String(queryCall?.init?.body))).toMatchObject({
         filter: {
-          property: "일정",
-          date: {
-            on_or_after: "2026-03-26T00:00:00+09:00"
-          }
+          and: [
+            {
+              property: "일정",
+              date: {
+                on_or_after: "2026-03-26T00:00:00+09:00"
+              }
+            },
+            {
+              property: "일정",
+              date: {
+                on_or_before: "2026-04-25T23:59:59+09:00"
+              }
+            }
+          ]
         }
       });
     } finally {
