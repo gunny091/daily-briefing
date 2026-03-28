@@ -15,7 +15,7 @@ describe("formatWeatherSection", () => {
     });
 
     expect(section).toContain("- 맑음");
-    expect(section).toContain("기온: 10 (12/ 3)");
+    expect(section).toContain("기온: 10 (12 / 3)");
     expect(section).toContain("자외선 지수: 5");
     expect(section).toContain("강수확률 30%, 강수량 1.2mm");
     expect(section).toContain("강수 시작 시간: 09:00");

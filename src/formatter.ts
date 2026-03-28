@@ -34,7 +34,7 @@ export function formatWeatherSection(summary: WeatherSummary): string {
   const lines = [
     "## 날씨",
     `- ${summary.conditionLabel}`,
-    `- 기온: ${formatCompactNumber(summary.currentTemperature)} (${formatCompactNumber(summary.maxTemperature)}/ ${formatCompactNumber(summary.minTemperature)})`,
+    `- 기온: ${formatCompactNumber(summary.currentTemperature)} (${formatCompactNumber(summary.maxTemperature)} / ${formatCompactNumber(summary.minTemperature)})`,
     `- 자외선 지수: ${formatCompactNumber(summary.uvIndexMax)}`,
     `- 강수확률 ${formatCompactNumber(summary.precipitationProbabilityMax)}%, 강수량 ${formatCompactNumber(summary.precipitationAmountMax)}mm`
   ];
