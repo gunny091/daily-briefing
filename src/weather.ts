@@ -1,5 +1,7 @@
+import https from "node:https";
 import type { WeatherHourlyPrecipitation, WeatherSummary } from "./types";
 
+const WEATHER_REQUEST_TIMEOUT_MS = 10_000;
 const WEATHER_RETRY_DELAY_MS = 60_000;
 const WEATHER_MAX_ATTEMPTS = 3;
 
@@ -118,6 +120,57 @@ function sleep(ms: number): Promise<void> {
   });
 }
 
+type HttpResponse = {
+  statusCode: number;
+  statusMessage: string;
+  body: string;
+};
+
+function fetchJson(url: string): Promise<HttpResponse> {
+  return new Promise((resolve, reject) => {
+    const requestUrl = new URL(url);
+    const request = https.request(
+      {
+        protocol: requestUrl.protocol,
+        hostname: requestUrl.hostname,
+        port: requestUrl.port ? Number(requestUrl.port) : 443,
+        path: `${requestUrl.pathname}${requestUrl.search}`,
+        method: "GET",
+        family: 4,
+        timeout: WEATHER_REQUEST_TIMEOUT_MS,
+        headers: {
+          accept: "application/json"
+        }
+      },
+      (response) => {
+        const chunks: Buffer[] = [];
+
+        response.setEncoding("utf8");
+        response.on("data", (chunk: string) => {
+          chunks.push(Buffer.from(chunk));
+        });
+        response.on("end", () => {
+          resolve({
+            statusCode: response.statusCode ?? 0,
+            statusMessage: response.statusMessage ?? "",
+            body: Buffer.concat(chunks).toString("utf8")
+          });
+        });
+      }
+    );
+
+    request.on("error", (error) => {
+      reject(error);
+    });
+
+    request.on("timeout", () => {
+      request.destroy(new Error(`Open-Meteo request timed out after ${WEATHER_REQUEST_TIMEOUT_MS}ms`));
+    });
+
+    request.end();
+  });
+}
+
 function normalizeError(error: unknown): WeatherFetchErrorDetails["error"] {
   if (error instanceof Error) {
     const typedError = error as Error & {
@@ -148,6 +201,19 @@ function logWeatherFetchFailure(details: WeatherFetchErrorDetails): void {
   console.error("[weather] Open-Meteo fetch failed", details);
 }
 
+function createFallbackWeatherSummary(): WeatherSummary {
+  return {
+    conditionLabel: "날씨 정보 없음",
+    currentTemperature: null,
+    minTemperature: null,
+    maxTemperature: null,
+    uvIndexMax: null,
+    precipitationProbabilityMax: null,
+    precipitationAmountMax: null,
+    precipitationStartTime: null
+  };
+}
+
 async function fetchOpenMeteoPayload(latitude: number, longitude: number): Promise<OpenMeteoResponse> {
   const params = new URLSearchParams({
     latitude: String(latitude),
@@ -160,11 +226,10 @@ async function fetchOpenMeteoPayload(latitude: number, longitude: number): Promi
   });
 
   const url = `https://api.open-meteo.com/v1/forecast?${params.toString()}`;
-  const response = await fetch(url);
+  const response = await fetchJson(url);
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    const error = new Error(`Open-Meteo request failed with status ${response.status}`);
+  if (response.statusCode < 200 || response.statusCode >= 300) {
+    const error = new Error(`Open-Meteo request failed with status ${response.statusCode}`);
     const typedError = error as Error & {
       status?: number;
       statusText?: string;
@@ -172,14 +237,14 @@ async function fetchOpenMeteoPayload(latitude: number, longitude: number): Promi
       body?: string;
     };
 
-    typedError.status = response.status;
-    typedError.statusText = response.statusText;
+    typedError.status = response.statusCode;
+    typedError.statusText = response.statusMessage;
     typedError.url = url;
-    typedError.body = body.slice(0, 500);
+    typedError.body = response.body.slice(0, 500);
     throw error;
   }
 
-  return (await response.json()) as OpenMeteoResponse;
+  return JSON.parse(response.body) as OpenMeteoResponse;
 }
 
 export async function fetchWeatherSummary(
@@ -216,12 +281,12 @@ export async function fetchWeatherSummary(
       });
 
       if (attempt === WEATHER_MAX_ATTEMPTS) {
-        throw new Error("날씨 정보를 가져오지 못했습니다. 1분 간격으로 2번 더 시도했지만 실패했습니다.");
+        return createFallbackWeatherSummary();
       }
 
       await sleep(WEATHER_RETRY_DELAY_MS);
     }
   }
 
-  throw new Error("날씨 정보를 가져오지 못했습니다.");
+  return createFallbackWeatherSummary();
 }
