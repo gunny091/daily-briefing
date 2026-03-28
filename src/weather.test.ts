@@ -1,5 +1,6 @@
 import { EventEmitter } from "node:events";
 import https from "node:https";
+import type { ClientRequest, IncomingMessage, RequestOptions } from "node:http";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchWeatherSummary } from "./weather";
 
@@ -14,7 +15,15 @@ type MockHttpsResponse =
     };
 
 function mockHttpsRequest(responses: MockHttpsResponse[]) {
-  return vi.spyOn(https, "request").mockImplementation((options, callback) => {
+  return vi.spyOn(https, "request").mockImplementation(
+    ((
+      _urlOrOptions: string | URL | RequestOptions,
+      optionsOrCallback?: RequestOptions | ((res: IncomingMessage) => void),
+      maybeCallback?: (res: IncomingMessage) => void
+    ) => {
+      const callback =
+        typeof optionsOrCallback === "function" ? optionsOrCallback : maybeCallback;
+
     const next = responses.shift();
     if (!next) {
       throw new Error("No mock HTTPS response configured");
@@ -57,7 +66,7 @@ function mockHttpsRequest(responses: MockHttpsResponse[]) {
         response.statusMessage = next.statusMessage ?? "";
         response.setEncoding = () => undefined;
 
-        callback?.(response);
+        callback?.(response as IncomingMessage);
 
         queueMicrotask(() => {
           response.emit("data", next.body);
@@ -68,8 +77,9 @@ function mockHttpsRequest(responses: MockHttpsResponse[]) {
       return request;
     };
 
-    return request;
-  });
+      return request as ClientRequest;
+    }) as typeof https.request
+  );
 }
 
 describe("fetchWeatherSummary", () => {
