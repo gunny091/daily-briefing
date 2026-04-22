@@ -16,9 +16,68 @@ describe("formatWeatherSection", () => {
 
     expect(section).toContain("- 맑음");
     expect(section).toContain("기온: 10 (12 / 3)");
-    expect(section).toContain("자외선 지수: 5");
+    expect(section).toContain("자외선 지수: 5 (보통)");
     expect(section).toContain("강수확률 30%, 강수량 1.2mm");
     expect(section).toContain("강수 시작 시간: 09:00");
+  });
+
+  it("renders uv risk labels by standard threshold", () => {
+    const low = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 2,
+      precipitationProbabilityMax: 30,
+      precipitationAmountMax: 1.2,
+      precipitationStartTime: null
+    });
+    const moderate = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 5,
+      precipitationProbabilityMax: 30,
+      precipitationAmountMax: 1.2,
+      precipitationStartTime: null
+    });
+    const high = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 6.9,
+      precipitationProbabilityMax: 30,
+      precipitationAmountMax: 1.2,
+      precipitationStartTime: null
+    });
+    const veryHigh = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 8.3,
+      precipitationProbabilityMax: 30,
+      precipitationAmountMax: 1.2,
+      precipitationStartTime: null
+    });
+    const extreme = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 11.4,
+      precipitationProbabilityMax: 30,
+      precipitationAmountMax: 1.2,
+      precipitationStartTime: null
+    });
+
+    expect(low).toContain("자외선 지수: 2 (낮음)");
+    expect(moderate).toContain("자외선 지수: 5 (보통)");
+    expect(high).toContain("자외선 지수: 6.9 (높음)");
+    expect(veryHigh).toContain("자외선 지수: 8.3 (매우 높음)");
+    expect(extreme).toContain("자외선 지수: 11.4 (위험)");
   });
 
   it("handles missing optional weather values", () => {

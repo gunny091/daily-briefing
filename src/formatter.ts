@@ -8,6 +8,34 @@ function formatCompactNumber(value: number | null): string {
   return value === null ? "정보 없음" : `${value}`;
 }
 
+function getUvIndexLabel(value: number): string {
+  if (value <= 2) {
+    return "낮음";
+  }
+
+  if (value <= 5) {
+    return "보통";
+  }
+
+  if (value <= 7) {
+    return "높음";
+  }
+
+  if (value <= 10) {
+    return "매우 높음";
+  }
+
+  return "위험";
+}
+
+function formatUvIndex(value: number | null): string {
+  if (value === null) {
+    return "정보 없음";
+  }
+
+  return `${value} (${getUvIndexLabel(value)})`;
+}
+
 function formatScheduleLabel(value: string): string {
   const matched = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
   if (!matched) {
@@ -35,7 +63,7 @@ export function formatWeatherSection(summary: WeatherSummary): string {
     "## 날씨",
     `- ${summary.conditionLabel}`,
     `- 기온: ${formatCompactNumber(summary.currentTemperature)} (${formatCompactNumber(summary.maxTemperature)} / ${formatCompactNumber(summary.minTemperature)})`,
-    `- 자외선 지수: ${formatCompactNumber(summary.uvIndexMax)}`,
+    `- 자외선 지수: ${formatUvIndex(summary.uvIndexMax)}`,
     `- 강수확률 ${formatCompactNumber(summary.precipitationProbabilityMax)}%, 강수량 ${formatCompactNumber(summary.precipitationAmountMax)}mm`
   ];
 
