@@ -1,4 +1,8 @@
 import type { DDayItem, NotionPageLink, NotionScheduleItem, QuoteOfDay, WeatherSummary } from "./types";
+import {
+  PRECIPITATION_AMOUNT_DISPLAY_THRESHOLD,
+  PRECIPITATION_PROBABILITY_DISPLAY_THRESHOLD
+} from "./weather";
 
 function formatNumber(value: number | null, suffix = ""): string {
   return value === null ? "정보 없음" : `${value}${suffix}`;
@@ -36,6 +40,28 @@ function formatUvIndex(value: number | null): string {
   return `${value} (${getUvIndexLabel(value)})`;
 }
 
+function formatPrecipitationLine(summary: WeatherSummary): string | null {
+  const shouldDisplay =
+    (summary.precipitationProbabilityMax ?? 0) >= PRECIPITATION_PROBABILITY_DISPLAY_THRESHOLD ||
+    (summary.precipitationAmountSum ?? 0) >= PRECIPITATION_AMOUNT_DISPLAY_THRESHOLD;
+
+  if (!shouldDisplay) {
+    return null;
+  }
+
+  const parts = [];
+
+  if (summary.precipitationProbabilityMax !== null) {
+    parts.push(`강수확률 ${formatCompactNumber(summary.precipitationProbabilityMax)}%`);
+  }
+
+  if (summary.precipitationAmountSum !== null) {
+    parts.push(`강수량 ${formatCompactNumber(summary.precipitationAmountSum)}mm`);
+  }
+
+  return parts.length > 0 ? `- ${parts.join(", ")}` : null;
+}
+
 function formatScheduleLabel(value: string): string {
   const matched = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:\s+(\d{2}):(\d{2}))?/);
   if (!matched) {
@@ -63,9 +89,13 @@ export function formatWeatherSection(summary: WeatherSummary): string {
     "## 날씨",
     `- ${summary.conditionLabel}`,
     `- 기온: ${formatCompactNumber(summary.currentTemperature)} (${formatCompactNumber(summary.maxTemperature)} / ${formatCompactNumber(summary.minTemperature)})`,
-    `- 자외선 지수: ${formatUvIndex(summary.uvIndexMax)}`,
-    `- 강수확률 ${formatCompactNumber(summary.precipitationProbabilityMax)}%, 강수량 ${formatCompactNumber(summary.precipitationAmountMax)}mm`
+    `- 자외선 지수: ${formatUvIndex(summary.uvIndexMax)}`
   ];
+
+  const precipitationLine = formatPrecipitationLine(summary);
+  if (precipitationLine) {
+    lines.push(precipitationLine);
+  }
 
   if (summary.precipitationStartTime) {
     lines.push(`- 강수 시작 시간: ${summary.precipitationStartTime}`);

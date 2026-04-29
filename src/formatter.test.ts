@@ -9,16 +9,58 @@ describe("formatWeatherSection", () => {
       minTemperature: 3,
       maxTemperature: 12,
       uvIndexMax: 5,
-      precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationProbabilityMax: 50,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: "09:00"
     });
 
     expect(section).toContain("- 맑음");
     expect(section).toContain("기온: 10 (12 / 3)");
     expect(section).toContain("자외선 지수: 5 (보통)");
-    expect(section).toContain("강수확률 30%, 강수량 1.2mm");
+    expect(section).toContain("강수확률 50%, 강수량 1.2mm");
     expect(section).toContain("강수 시작 시간: 09:00");
+  });
+
+  it("omits precipitation values below the display threshold", () => {
+    const section = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 5,
+      precipitationProbabilityMax: 49,
+      precipitationAmountSum: 0.4,
+      precipitationStartTime: null
+    });
+
+    expect(section).not.toContain("강수확률");
+    expect(section).not.toContain("강수량");
+  });
+
+  it("renders precipitation values when either value meets the display threshold", () => {
+    const probabilityThreshold = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 5,
+      precipitationProbabilityMax: 50,
+      precipitationAmountSum: 0.4,
+      precipitationStartTime: null
+    });
+    const amountThreshold = formatWeatherSection({
+      conditionLabel: "맑음",
+      currentTemperature: 10,
+      minTemperature: 3,
+      maxTemperature: 12,
+      uvIndexMax: 5,
+      precipitationProbabilityMax: 49,
+      precipitationAmountSum: 0.5,
+      precipitationStartTime: null
+    });
+
+    expect(probabilityThreshold).toContain("강수확률 50%, 강수량 0.4mm");
+    expect(amountThreshold).toContain("강수확률 49%, 강수량 0.5mm");
   });
 
   it("renders uv risk labels by standard threshold", () => {
@@ -29,7 +71,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: 12,
       uvIndexMax: 2,
       precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: null
     });
     const moderate = formatWeatherSection({
@@ -39,7 +81,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: 12,
       uvIndexMax: 5,
       precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: null
     });
     const high = formatWeatherSection({
@@ -49,7 +91,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: 12,
       uvIndexMax: 6.9,
       precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: null
     });
     const veryHigh = formatWeatherSection({
@@ -59,7 +101,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: 12,
       uvIndexMax: 8.3,
       precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: null
     });
     const extreme = formatWeatherSection({
@@ -69,7 +111,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: 12,
       uvIndexMax: 11.4,
       precipitationProbabilityMax: 30,
-      precipitationAmountMax: 1.2,
+      precipitationAmountSum: 1.2,
       precipitationStartTime: null
     });
 
@@ -88,7 +130,7 @@ describe("formatWeatherSection", () => {
       maxTemperature: null,
       uvIndexMax: null,
       precipitationProbabilityMax: null,
-      precipitationAmountMax: null,
+      precipitationAmountSum: null,
       precipitationStartTime: null
     });
 

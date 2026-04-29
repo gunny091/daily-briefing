@@ -44,7 +44,7 @@ export type WeatherSummary = {
   maxTemperature: number | null;
   uvIndexMax: number | null;
   precipitationProbabilityMax: number | null;
-  precipitationAmountMax: number | null;
+  precipitationAmountSum: number | null;
   precipitationStartTime: string | null;
 };
 

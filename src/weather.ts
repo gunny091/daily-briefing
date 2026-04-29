@@ -4,6 +4,8 @@ import type { WeatherHourlyPrecipitation, WeatherSummary } from "./types";
 const WEATHER_REQUEST_TIMEOUT_MS = 10_000;
 const WEATHER_RETRY_DELAY_MS = 60_000;
 const WEATHER_MAX_ATTEMPTS = 3;
+export const PRECIPITATION_PROBABILITY_DISPLAY_THRESHOLD = 50;
+export const PRECIPITATION_AMOUNT_DISPLAY_THRESHOLD = 0.5;
 
 type OpenMeteoResponse = {
   current?: {
@@ -110,7 +112,11 @@ function pickPrecipitationStartTime(
 ): string | null {
   const rows = pickTodayHourlyPrecipitation(time, probabilities, amounts, today);
   return (
-    rows.find((row) => (row.probability ?? 0) >= 50 || (row.amount ?? 0) >= 0.5)?.time ?? null
+    rows.find(
+      (row) =>
+        (row.probability ?? 0) >= PRECIPITATION_PROBABILITY_DISPLAY_THRESHOLD ||
+        (row.amount ?? 0) >= PRECIPITATION_AMOUNT_DISPLAY_THRESHOLD
+    )?.time ?? null
   );
 }
 
@@ -209,7 +215,7 @@ function createFallbackWeatherSummary(): WeatherSummary {
     maxTemperature: null,
     uvIndexMax: null,
     precipitationProbabilityMax: null,
-    precipitationAmountMax: null,
+    precipitationAmountSum: null,
     precipitationStartTime: null
   };
 }
@@ -267,7 +273,7 @@ export async function fetchWeatherSummary(
         maxTemperature: payload.daily?.temperature_2m_max?.[0] ?? null,
         uvIndexMax: payload.daily?.uv_index_max?.[0] ?? null,
         precipitationProbabilityMax: payload.daily?.precipitation_probability_max?.[0] ?? null,
-        precipitationAmountMax: payload.daily?.precipitation_sum?.[0] ?? null,
+        precipitationAmountSum: payload.daily?.precipitation_sum?.[0] ?? null,
         precipitationStartTime
       };
     } catch (error: unknown) {

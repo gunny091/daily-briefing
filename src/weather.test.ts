@@ -177,7 +177,7 @@ describe("fetchWeatherSummary", () => {
         maxTemperature: null,
         uvIndexMax: null,
         precipitationProbabilityMax: null,
-        precipitationAmountMax: null,
+        precipitationAmountSum: null,
         precipitationStartTime: null
       });
 
